@@ -1,14 +1,4 @@
-// (6+7-9)*5+(6-2)*3
-// 6-7*(5-3)+567)
-
-
-//exports.preparationExpr = preparationExpr;
-
-window.onload = function () {
-	document.querySelector('#calcButton').addEventListener('click', buttonCalcClicked);
-}
-
-var preparationExpr = function (expr) {
+function preparationExpr(expr) {
 	expr = expr.replace(/\s+/g, '');
 	var readyExpr = expr.split('');
 	var i=1;
@@ -22,7 +12,7 @@ var preparationExpr = function (expr) {
 	return readyExpr;
 }
 
-var isAllCharValid = function (expr){
+function isAllCharValid(expr){
 	for(i=0; i < expr.length; i++){
 		if(!Number.isInteger(Number(expr[i]))&&(expr[i]!='+')&&(expr[i]!='-')&&(expr[i]!='/')&&(expr[i]!='*')&&(expr[i]!='(')&&(expr[i]!=')')){
 			return false;
@@ -54,7 +44,7 @@ var isFirstLowerPriority = function (first,second) {
 	return false;
 }
 
-var toRPN = function (expr){
+function toRPN(expr) {
 	var resultExpr =[];
 	var tempStack =[];
 	while(Boolean(expr[0])){
@@ -103,7 +93,7 @@ var toRPN = function (expr){
 	return resultExpr
 }
 
-var simpleMathAction = function (a, b, sign){
+function simpleMathAction(a, b, sign){
 	var res;
 	switch (sign) {
 			case "+":
@@ -124,7 +114,7 @@ var simpleMathAction = function (a, b, sign){
 	return res;
 }
 
-var calculator = function (expr){
+function calculator(expr){
 	var res;
 	var i=0;
 	while(expr.length!=1){
@@ -143,27 +133,6 @@ var calculator = function (expr){
 	return res;
 }
 
-var calculateString = function (incomingExp) {
-	expression = preparationExpr(incomingExp);
-	if(!isAllCharValid(expression)) {		
-		document.getElementById('res').innerHTML = "not valid expression (please, enter only numbers,(,),*,/,+,-)";
-		return;
-	}
-	var exprRPN = toRPN(expression.slice());
-	if(exprRPN==null){
-		document.getElementById('res').innerHTML = "not valid expression (somthing wrong with logic)";
-		return;
-	}
-	var result = calculator(exprRPN);
-	if (result==null) {
-		document.getElementById('res').innerHTML = "not valid expression (somthing wrong with logic)";
-		return;	
-	};
-	document.getElementById('res').innerHTML = result;
-}
-
-
-var buttonCalcClicked = function() {
-	var incomingExp = $("#a").val();  
-	calculateString(incomingExp);
-}
+module.exports = {
+	preparationExpr:preparationExpr
+};
