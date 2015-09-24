@@ -2,11 +2,11 @@
 // 6-7*(5-3)+567)
 
 
-exports.preparationExpr = preparationExpr;
+//exports.preparationExpr = preparationExpr;
 
-/*window.onload = function () {
+window.onload = function () {
 	document.querySelector('#calcButton').addEventListener('click', buttonCalcClicked);
-}*/
+}
 
 var preparationExpr = function (expr) {
 	expr = expr.replace(/\s+/g, '');
