@@ -1,7 +1,8 @@
-function preparationExpr(expr) {
+function preparationExpr (expr) {
 	expr = expr.replace(/\s+/g, '');
 	var readyExpr = expr.split('');
 	var i=1;
+	debugger;
 	while(readyExpr[i]){
 		if(Number.isInteger(Number(readyExpr[i-1]))&&Number.isInteger(Number(readyExpr[i]))){
 			readyExpr[i-1] =readyExpr[i-1] +readyExpr.splice(i,1);
@@ -12,14 +13,6 @@ function preparationExpr(expr) {
 	return readyExpr;
 }
 
-function isAllCharValid(expr){
-	for(i=0; i < expr.length; i++){
-		if(!Number.isInteger(Number(expr[i]))&&(expr[i]!='+')&&(expr[i]!='-')&&(expr[i]!='/')&&(expr[i]!='*')&&(expr[i]!='(')&&(expr[i]!=')')){
-			return false;
-		}
-	}
-	return true;
-}
 
 var isFirstLowerPriority = function (first,second) {
 	var priority1, priority2;
@@ -44,6 +37,16 @@ var isFirstLowerPriority = function (first,second) {
 	return false;
 }
 
+function takeAllNumber (expr,resultExpr){
+	var num = '';
+	while(Number(expr[expr.length-1])){
+		num =num + expr.pop();
+	}
+	resultExpr.push(num);
+	return resultExpr;
+}
+
+
 function toRPN(expr) {
 	var resultExpr =[];
 	var tempStack =[];
@@ -61,9 +64,6 @@ function toRPN(expr) {
 			while (tempStack[tempStack.length-1]!='(') {
 				if(tempStack.length!=0){
 					resultExpr.push(tempStack.pop());
-				}
-				else{
-					return null;
 				}
 			}
 			tempStack.pop();
@@ -115,10 +115,11 @@ function simpleMathAction(a, b, sign){
 }
 
 function calculator(expr){
-	var res;
+	expr = expr.split('');
+	expr = toRPN(expr);
 	var i=0;
 	while(expr.length!=1){
-		while(Number.isInteger(Number(expr[i]))){ i++;}
+		while(Number(expr[i])){ i++;}
 		if(i>1){
 			var actionRes = simpleMathAction(expr[i-2],expr[i-1],expr[i]);
 			if(actionRes=='Error'){ return null;}
@@ -129,10 +130,12 @@ function calculator(expr){
 			return null;
 		}
 	}
-	res=expr[0];
-	return res;
+	return expr[0];
 }
 
+
+
 module.exports = {
+	calculator:calculator,
 	preparationExpr:preparationExpr
 };
