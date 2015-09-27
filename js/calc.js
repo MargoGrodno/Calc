@@ -1,43 +1,21 @@
-function preparationExpr (expr) {
-	expr = expr.replace(/\s+/g, '');
-	var readyExpr = expr.split('');
-	var i=1;
-	debugger;
-	while(readyExpr[i]){
-		if( !isNaN(readyExpr[i-1]) && !isNaN(readyExpr[i]) ) {
-			readyExpr[i-1] =readyExpr[i-1] +readyExpr.splice(i,1);
-			i--
-		}
-		i++;
+function getPriority (symbol){
+	switch (symbol) {
+		case "*":
+		case "/":
+			return 3;
+		case "+":
+		case "-":
+			return 2;
+		case "(":
+			return 1;
 	}
-	return readyExpr;
 }
-
 
 var isFirstLowerPriority = function (first,second) {
-	var priority1, priority2;
-	if (first=='*'||first=='/') {
-		priority1=3;
-	}
-	if (first=='+'||first=='-') {
-		priority1=2;
-	}
-	if (first=='(') {
-		priority1=1;
-	}
-	if (second=='*'||second=='/') {
-		priority2=3;
-	}
-	if (second=='+'||second=='-') {
-		priority2=2;
-	}
-	if(priority1<priority2){
-		return true;
-	}
-	return false;
+	return getPriority(first) < getPriority(second);
 }
 
-function takeAllNumber (expr,resultExpr, curent){
+function takeAllNumberToResultExpr (expr,resultExpr, curent){
 	var num = curent;
 	while(!isNaN(expr[0])){
 		num =num + expr.shift();
@@ -46,46 +24,49 @@ function takeAllNumber (expr,resultExpr, curent){
 	return resultExpr;
 }
 
+function removeBrackets (resultExpr,tempStack) {
+	while (tempStack[tempStack.length-1] != '(' ) {
+		if(tempStack.length!=0){
+			resultExpr.push(tempStack.pop());
+		}
+	}
+	tempStack.pop();
+}
+
+function processMathOperator (resultExpr,tempStack,curent) {
+	if(tempStack.length==0 || isFirstLowerPriority(tempStack[tempStack.length-1],curent)) {
+		tempStack.push(curent);
+	} else {
+		while(Boolean(tempStack[0]) && !isFirstLowerPriority(tempStack[tempStack.length-1],curent)){
+			resultExpr.push(tempStack.pop());
+		}
+		tempStack.push(curent);
+	}
+}
+
 function toRPN(expr) {
 	var resultExpr =[];
 	var tempStack =[];
+
 	while(Boolean(expr[0])){
 		var curent = expr.shift();
 		if (!isNaN(curent)) {
-			takeAllNumber(expr,resultExpr,curent);
+			takeAllNumberToResultExpr(expr,resultExpr,curent);
 			continue;
 		}
-		if(curent=='(') {
+		if ((curent == '*') || (curent == '/') || (curent == '+') || (curent == '-')) {
+			processMathOperator(resultExpr, tempStack, curent);
+			continue;
+		}
+		if(curent == '(') {
 			tempStack.push(curent);
 			continue;
 		}
-		if(curent==')') {
-			while (tempStack[tempStack.length-1]!='(') {
-				if(tempStack.length!=0){
-					resultExpr.push(tempStack.pop());
-				}
-			}
-			tempStack.pop();
-			continue;
-		}
-		if ((curent=='*')||(curent=='/')||(curent=='+')||(curent=='-')) {
-			if(tempStack.length==0) {
-				tempStack.push(curent);
-				continue;
-			}
-			if(isFirstLowerPriority(tempStack[tempStack.length-1],curent)){
-				tempStack.push(curent);
-				continue;
-			}
-			else {
-				while(Boolean(tempStack[0])&&!isFirstLowerPriority(tempStack[tempStack.length-1],curent)){
-					resultExpr.push(tempStack.pop());
-				}
-				tempStack.push(curent);
-				continue;
-			}
+		if(curent == ')') {
+			removeBrackets(resultExpr,tempStack);			
 		}
 	}
+
 	while(Boolean(tempStack[0])){
 		resultExpr.push(tempStack.pop());
 	}

@@ -1,3 +1,3 @@
 
 var rpn = require('./calc');
-rpn.calculator('0+905');
+rpn.calculator('(9+8)');
