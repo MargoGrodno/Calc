@@ -4,7 +4,7 @@ function preparationExpr (expr) {
 	var i=1;
 	debugger;
 	while(readyExpr[i]){
-		if(Number.isInteger(Number(readyExpr[i-1]))&&Number.isInteger(Number(readyExpr[i]))){
+		if( !isNaN(readyExpr[i-1]) && !isNaN(readyExpr[i]) ) {
 			readyExpr[i-1] =readyExpr[i-1] +readyExpr.splice(i,1);
 			i--
 		}
@@ -37,23 +37,22 @@ var isFirstLowerPriority = function (first,second) {
 	return false;
 }
 
-function takeAllNumber (expr,resultExpr){
-	var num = '';
-	while(Number(expr[expr.length-1])){
-		num =num + expr.pop();
+function takeAllNumber (expr,resultExpr, curent){
+	var num = curent;
+	while(!isNaN(expr[0])){
+		num =num + expr.shift();
 	}
-	resultExpr.push(num);
+	resultExpr.push(Number(num));
 	return resultExpr;
 }
-
 
 function toRPN(expr) {
 	var resultExpr =[];
 	var tempStack =[];
 	while(Boolean(expr[0])){
 		var curent = expr.shift();
-		if (Number.isInteger(Number(curent))) {
-			resultExpr.push(curent);
+		if (!isNaN(curent)) {
+			takeAllNumber(expr,resultExpr,curent);
 			continue;
 		}
 		if(curent=='(') {
@@ -119,23 +118,19 @@ function calculator(expr){
 	expr = toRPN(expr);
 	var i=0;
 	while(expr.length!=1){
-		while(Number(expr[i])){ i++;}
+		while(!isNaN(expr[i])){ 
+			i++;
+		}
 		if(i>1){
 			var actionRes = simpleMathAction(expr[i-2],expr[i-1],expr[i]);
 			if(actionRes=='Error'){ return null;}
 			expr.splice(i-2, 3, actionRes);
 			i=i-2;
 		}
-		else{
-			return null;
-		}
 	}
 	return expr[0];
 }
 
-
-
 module.exports = {
-	calculator:calculator,
-	preparationExpr:preparationExpr
+	calculator:calculator
 };
