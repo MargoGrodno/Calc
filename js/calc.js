@@ -1,3 +1,7 @@
+function isNumber(a) {
+	return typeof a == 'number';
+}
+
 function getPriority (symbol){
 	switch (symbol) {
 		case "*":
@@ -17,7 +21,7 @@ var isFirstLowerPriority = function (first,second) {
 
 function takeAllNumberToResultExpr (expr,resultExpr, curent){
 	var num = curent;
-	while(!isNaN(expr[0])){
+	while(!isNaN(expr[0])){ //
 		num =num + expr.shift();
 	}
 	resultExpr.push(Number(num));
@@ -47,6 +51,8 @@ function processMathOperator (resultExpr,tempStack,curent) {
 function toRPN(expr) {
 	var resultExpr =[];
 	var tempStack =[];
+
+	expr = expr.split('');
 
 	while(Boolean(expr[0])){
 		var curent = expr.shift();
@@ -89,29 +95,52 @@ function simpleMathAction(a, b, sign){
 				res= Number(a)/Number(b);
 				break;
 			default:
-				return 'Error';
+				throw new Error('Unsupported operation');
 	}
 	return res;
 }
 
-function calculator(expr){
-	expr = expr.split('');
-	expr = toRPN(expr);
-	var i=0;
-	while(expr.length!=1){
-		while(!isNaN(expr[i])){ 
+function calculator(str){
+	var expr = toRPN(str);
+
+	return calculateRpn(expr);
+}
+
+
+function calculateRpn(expr) {
+	var i = 0;
+	var stack = [];
+
+	while(i < expr.length) {
+		if(isNumber(expr[i])) {
+			stack.push(expr[i]);
 			i++;
+			continue;
 		}
-		if(i>1){
-			var actionRes = simpleMathAction(expr[i-2],expr[i-1],expr[i]);
-			if(actionRes=='Error'){ return null;}
-			expr.splice(i-2, 3, actionRes);
-			i=i-2;
+
+		var operation = expr[i];
+
+		if(stack.length < 2) {
+			throw new Error('incorrect expression');
 		}
+
+		var second = stack.pop(); 
+		var first = stack.pop(); 
+
+		var result = simpleMathAction(first, second, operation);
+
+		stack.push(result);
+
+		i++;
 	}
-	return expr[0];
+
+	if(stack.length != 1) {
+		throw new Error('incorrect expression');
+	}
+	return stack.pop();
 }
 
 module.exports = {
-	calculator:calculator
+	calculator:calculator,
+	calculateRpn:calculateRpn
 };
