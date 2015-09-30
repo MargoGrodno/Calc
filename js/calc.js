@@ -53,6 +53,9 @@ function removeBrackets (resultExpr, tempStack) {
 		if(tempStack.length!=0){
 			resultExpr.push(tempStack.pop());
 		}
+		else {
+			throw new Error ('incorrect expression: brackets error')
+		}
 	}
 	tempStack.pop();
 }

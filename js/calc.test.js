@@ -141,5 +141,28 @@ describe('Reverse Polish Notation', function() {
 			expect(result).to.equal(11);
 		});
 	});
+	describe('Errors', function() {
+		it('() ---> incorrect expression', function () {
+			expect(function() {rpn.calculator('()');}).to.throw('incorrect expression');
+		});
+		it('(2-3)) ---> incorrect expression: brackets error', function () {
+			expect(function() {rpn.calculator('(2-3))');}).to.throw('incorrect expression: brackets error');
+		});
+		it('*-/ ---> incorrect expression', function () {
+			expect(function() {rpn.calculator('*-/');}).to.throw('incorrect expression');
+		});
+		it('*2+87 ---> incorrect expression', function () {
+			expect(function() {rpn.calculator('*2+87');}).to.throw('incorrect expression');
+		});
+		it('2++87 ---> incorrect expression', function () {
+			expect(function() {rpn.calculator('2++87');}).to.throw('incorrect expression');
+		});
+		it('3+87- ---> incorrect expression: minus in the end', function () {
+			expect(function() {rpn.calculator('3+87-');}).to.throw('incorrect expression: minus in the end');
+		});
+		it('3%87- ---> incorrect expression', function () {
+			expect(function() {rpn.calculator('3%87');}).to.throw('incorrect expression');
+		});
+	});
 	
 });
