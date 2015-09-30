@@ -15,6 +15,7 @@ function arithmeticAverage() {
   	return result;
 }
 
+
 function isNumber(a) {
 	if (typeof a == 'number') {
 		return true;	
@@ -35,20 +36,19 @@ function getPriority (symbol){
 	}
 }
 
-var isFirstLowerPriority = function (first,second) {
+var isFirstLowerPriority = function (first, second) {
 	return getPriority(first) < getPriority(second);
 }
 
-function takeAllNumberToResultExpr (expr,resultExpr, curent){
+function takeAllNumber (expr, curent){
 	var allNumber = curent;
 	while(isNumber(expr[0])){ 
 		allNumber = allNumber + expr.shift();
 	}
-	resultExpr.push(Number(allNumber));
-	return resultExpr;
+	return Number(allNumber);
 }
 
-function removeBrackets (resultExpr,tempStack) {
+function removeBrackets (resultExpr, tempStack) {
 	while (tempStack[tempStack.length-1] != '(' ) {
 		if(tempStack.length!=0){
 			resultExpr.push(tempStack.pop());
@@ -68,6 +68,29 @@ function processMathOperator (resultExpr,tempStack,curent) {
 	}
 }
 
+function processMinus (curent,tempStack,rpnExpr,expr) {
+	if (expr.length == 0){
+		throw new Error('incorrect expression: minus in the end')
+	}
+	if (isNumber(expr[0])) {
+
+		var firstDigit = expr.shift();			//Надо, наверное, переделать что-то чтоб этой строчки не было
+		var allNumber = takeAllNumber (expr, firstDigit);
+		
+		if(rpnExpr.length == 0){
+			rpnExpr.push(-allNumber);
+		}
+		else {
+			rpnExpr.push(-allNumber);
+			processMathOperator(rpnExpr, tempStack, '+');
+		}
+
+	}
+	else {
+		processMathOperator(rpnExpr, tempStack, curent);
+	}
+}
+
 function toRPN(str) {
 	var rpnExpr =[];
 	var tempStack =[];
@@ -75,11 +98,16 @@ function toRPN(str) {
 
 	while(Boolean(expr[0])){
 		var curent = expr.shift();
-		if (!isNaN(curent)) {
-			takeAllNumberToResultExpr(expr,rpnExpr,curent);
+		if (isNumber(curent)) {
+			curent = takeAllNumber(expr, curent);
+			rpnExpr.push(curent);
 			continue;
 		}
-		if ((curent == '*') || (curent == '/') || (curent == '+') || (curent == '-')) {
+		if (curent == '-') {
+			processMinus(curent,tempStack,rpnExpr,expr);
+			continue;
+		}
+		if ((curent == '*') || (curent == '/') || (curent == '+')) {
 			processMathOperator(rpnExpr, tempStack, curent);
 			continue;
 		}
@@ -140,7 +168,15 @@ function calculateRpn(expr) {
 		var operation = expr[i];
 
 		if(stack.length < 2) {
-			throw new Error('incorrect expression');
+			if (operation == '-' && stack.length == 1){
+				var number = stack.pop();
+				stack.push(-number);
+				i++;
+				continue;
+			}
+			else{
+				throw new Error('incorrect expression');
+			}
 		}
 
 		var second = stack.pop(); 
@@ -163,5 +199,6 @@ module.exports = {
 	calculator:calculator,
 	calculateRpn:calculateRpn,
 	sum: sum,
-	arithmeticAverage: arithmeticAverage
+	arithmeticAverage: arithmeticAverage,
+	toRPN:toRPN
 };

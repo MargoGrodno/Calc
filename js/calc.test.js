@@ -74,6 +74,10 @@ describe('Reverse Polish Notation', function() {
 			var result = rpn.calculator('12+9');
 			assert(result == 21);
 		});
+		it('12-9 ---> 3', function () {
+			var result = rpn.calculator('12-9');
+			assert(result == 3);
+		});
 		it('14+22*(5-3) ---> 58', function () {
 			var result = rpn.calculator('14+22*(5-3)');
 			assert(result == 58);
@@ -119,4 +123,23 @@ describe('Reverse Polish Notation', function() {
 			expect(result).to.equal(-913);
 		});
 	});
+	describe('unary minus', function() {
+		it('-1 ---> -1', function () {
+			var result = rpn.calculator('-1');
+			expect(result).to.equal(-1);
+		});
+		it('-1-2 ---> -3', function () {
+			var result = rpn.calculator('-1-2');
+			expect(result).to.equal(-3);
+		});
+		it('-(1-2) ---> 1', function () {
+			var result = rpn.calculator('-(1-2)');
+			expect(result).to.equal(1);
+		});
+		it('-(1-2)*(5+6/(3-2)) ---> 11', function () {
+			var result = rpn.calculator('-(1-2)*(5+6/(3-2))');
+			expect(result).to.equal(11);
+		});
+	});
+	
 });

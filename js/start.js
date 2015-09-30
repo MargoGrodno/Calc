@@ -1,4 +1,4 @@
 
 var rpn = require('./calc');
 
-rpn.calculateRpn([0, 600, '/']);
+rpn.calculator('12-9');
