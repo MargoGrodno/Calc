@@ -1,5 +1,25 @@
+function sum() {
+	result = arguments[0]; 
+  	for (var i = 1; i < arguments.length; i++) {
+    	result +=arguments[i];
+  	}
+  	return result;
+}
+
+function arithmeticAverage() {
+	result = arguments[0]; 
+  	for (var i = 1; i < arguments.length; i++) {
+    	result +=arguments[i];
+  	}
+  	result /= arguments.length;
+  	return result;
+}
+
 function isNumber(a) {
-	return typeof a == 'number';
+	if (typeof a == 'number') {
+		return true;	
+	} 					// Не уверена что так делать верно, но мне нужно как-то определить является ли символ цифрой. 
+	return !isNaN(a);	// вариант когда просто по typeof  для случая с цифрой в виде чара не срабатывает.
 }
 
 function getPriority (symbol){
@@ -20,11 +40,11 @@ var isFirstLowerPriority = function (first,second) {
 }
 
 function takeAllNumberToResultExpr (expr,resultExpr, curent){
-	var num = curent;
-	while(!isNaN(expr[0])){ //
-		num =num + expr.shift();
+	var allNumber = curent;
+	while(isNumber(expr[0])){ 
+		allNumber = allNumber + expr.shift();
 	}
-	resultExpr.push(Number(num));
+	resultExpr.push(Number(allNumber));
 	return resultExpr;
 }
 
@@ -48,20 +68,19 @@ function processMathOperator (resultExpr,tempStack,curent) {
 	}
 }
 
-function toRPN(expr) {
-	var resultExpr =[];
+function toRPN(str) {
+	var rpnExpr =[];
 	var tempStack =[];
-
-	expr = expr.split('');
+	var expr = str.split('');
 
 	while(Boolean(expr[0])){
 		var curent = expr.shift();
 		if (!isNaN(curent)) {
-			takeAllNumberToResultExpr(expr,resultExpr,curent);
+			takeAllNumberToResultExpr(expr,rpnExpr,curent);
 			continue;
 		}
 		if ((curent == '*') || (curent == '/') || (curent == '+') || (curent == '-')) {
-			processMathOperator(resultExpr, tempStack, curent);
+			processMathOperator(rpnExpr, tempStack, curent);
 			continue;
 		}
 		if(curent == '(') {
@@ -69,14 +88,14 @@ function toRPN(expr) {
 			continue;
 		}
 		if(curent == ')') {
-			removeBrackets(resultExpr,tempStack);			
+			removeBrackets(rpnExpr,tempStack);			
 		}
 	}
 
 	while(Boolean(tempStack[0])){
-		resultExpr.push(tempStack.pop());
+		rpnExpr.push(tempStack.pop());
 	}
-	return resultExpr
+	return rpnExpr
 }
 
 function simpleMathAction(a, b, sign){
@@ -142,5 +161,7 @@ function calculateRpn(expr) {
 
 module.exports = {
 	calculator:calculator,
-	calculateRpn:calculateRpn
+	calculateRpn:calculateRpn,
+	sum: sum,
+	arithmeticAverage: arithmeticAverage
 };
