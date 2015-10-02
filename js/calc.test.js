@@ -44,23 +44,6 @@ describe('Math operations', function() {
 	});	
 });
 describe('Reverse Polish Notation', function() {
-	describe('from expression', function() {
-		it('2+2 ---> 4', function () {
-			var result = rpn.calculateRpn([2, 2, '+']);
-
-			assert(result == 4);
-		});
-		it('0/600 ---> 0', function () {
-			var result = rpn.calculateRpn([0, 600, '/']);
-
-			expect(result).to.equal(0);
-		});
-		it('(600/0)+2 ---> Infinity', function () {
-			var result = rpn.calculateRpn([600, 0, '/', 2, '+']);
-
-			expect(result).to.equal(Infinity);
-		});
-	});
 	describe('from string', function() {
 		it('2+2 ---> 4', function () {
 			var result = rpn.calculator('2+2');
@@ -123,6 +106,8 @@ describe('Reverse Polish Notation', function() {
 			expect(result).to.equal(-913);
 		});
 	});
+
+
 	describe('unary minus', function() {
 		it('-1 ---> -1', function () {
 			var result = rpn.calculator('-1');
@@ -132,13 +117,33 @@ describe('Reverse Polish Notation', function() {
 			var result = rpn.calculator('-1-2');
 			expect(result).to.equal(-3);
 		});
-		it('-(1-2) ---> 1', function () {
-			var result = rpn.calculator('-(1-2)');
-			expect(result).to.equal(1);
+		it('-(-(1-2)) ---> -1', function () {
+			var result = rpn.calculator('-(-(1-2))');
+			expect(result).to.equal(-1);
+		});
+		it('56-(-(1-2)+2) ---> 53', function () {
+			var result = rpn.calculator('56-(-(1-2)+2)');
+			expect(result).to.equal(53);
 		});
 		it('-(1-2)*(5+6/(3-2)) ---> 11', function () {
 			var result = rpn.calculator('-(1-2)*(5+6/(3-2))');
 			expect(result).to.equal(11);
+		});
+	});
+
+
+	describe('variables', function() {
+		it('_t+1 ---> 3', function () {
+			var result = rpn.calculator('_t+1');
+			expect(result).to.equal(3);
+		});
+		it('_t+_h ---> 4', function () {
+			var result = rpn.calculator('_t+_h');
+			expect(result).to.equal(4);
+		});
+		it('_var-(-(1-_var1)+_var2) ---> -1', function () {
+			var result = rpn.calculator('_var-(-(1-_var1)+_var2)');
+			expect(result).to.equal(-1);
 		});
 	});
 	describe('Errors', function() {
@@ -146,6 +151,9 @@ describe('Reverse Polish Notation', function() {
 			expect(function() {rpn.calculator('()');}).to.throw('incorrect expression');
 		});
 		it('(2-3)) ---> incorrect expression: brackets error', function () {
+			expect(function() {rpn.calculator('(2-3))');}).to.throw('incorrect expression: brackets error');
+		});
+		it(')(2-3 ---> incorrect expression: brackets error', function () {
 			expect(function() {rpn.calculator('(2-3))');}).to.throw('incorrect expression: brackets error');
 		});
 		it('*-/ ---> incorrect expression', function () {
@@ -157,12 +165,18 @@ describe('Reverse Polish Notation', function() {
 		it('2++87 ---> incorrect expression', function () {
 			expect(function() {rpn.calculator('2++87');}).to.throw('incorrect expression');
 		});
-		it('3+87- ---> incorrect expression: minus in the end', function () {
-			expect(function() {rpn.calculator('3+87-');}).to.throw('incorrect expression: minus in the end');
+		it('3+87- ---> incorrect expression', function () {
+			expect(function() {rpn.calculator('3+87-');}).to.throw('incorrect expression');
 		});
 		it('3%87- ---> incorrect expression', function () {
 			expect(function() {rpn.calculator('3%87');}).to.throw('incorrect expression');
 		});
+		it('(test)- ---> incorrect expression', function () {
+			expect(function() {rpn.calculator('(test)-');}).to.throw('incorrect expression');
+		});
 	});
+	describe('tests for develop', function() {
+		
+	})
 	
 });

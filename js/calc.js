@@ -1,3 +1,27 @@
+var allowableMathSymbols = '+-*/';
+var allowableCharForVariable = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+function isAllwableMathSymbol(a) {
+	if (allowableMathSymbols.indexOf(a) != -1){
+		return true;
+	}
+	return false;
+}
+
+function isAllwableCharForVariable(a) {
+	if (allowableCharForVariable.indexOf(a) != -1){
+		return true;
+	}
+	return false;
+}
+
+function isNumber(a) {
+	if (typeof a == 'number') {
+		return true;	
+	} 					// Не уверена что так делать верно, но мне нужно как-то определить является ли символ цифрой. 
+	return !isNaN(a);	// вариант когда просто по typeof  для случая с цифрой в виде чара не срабатывает.
+}
+
 function sum() {
 	result = arguments[0]; 
   	for (var i = 1; i < arguments.length; i++) {
@@ -15,23 +39,21 @@ function arithmeticAverage() {
   	return result;
 }
 
-
-function isNumber(a) {
-	if (typeof a == 'number') {
-		return true;	
-	} 					// Не уверена что так делать верно, но мне нужно как-то определить является ли символ цифрой. 
-	return !isNaN(a);	// вариант когда просто по typeof  для случая с цифрой в виде чара не срабатывает.
+function getLast (array) {
+	return array[array.length-1]
 }
 
 function getPriority (symbol){
 	switch (symbol) {
-		case "*":
-		case "/":
+		case '-!':
+			return 4;
+		case '*':
+		case '/':
 			return 3;
-		case "+":
-		case "-":
+		case '+':
+		case '-':
 			return 2;
-		case "(":
+		case '(':
 			return 1;
 	}
 }
@@ -40,114 +62,163 @@ var isFirstLowerPriority = function (first, second) {
 	return getPriority(first) < getPriority(second);
 }
 
-function takeAllNumber (expr, curent){
-	var allNumber = curent;
-	while(isNumber(expr[0])){ 
-		allNumber = allNumber + expr.shift();
+function takeAllNumber (expr, indexFrom){
+	var allNumber = expr[indexFrom];
+	indexFrom++;
+	while(isNumber(expr[indexFrom])){ 
+		allNumber = allNumber + expr[indexFrom];
+		indexFrom++;
 	}
-	return Number(allNumber);
+	return allNumber;
+}
+
+function takeAllVariableName (expr, indexFrom){
+	var allName = expr[indexFrom];
+	var i = indexFrom +1;
+	while( isAllwableCharForVariable(expr[i]) !=0){ 
+		allName = allName + expr[i];
+		i++;
+	}
+	return allName;
 }
 
 function removeBrackets (resultExpr, tempStack) {
-	while (tempStack[tempStack.length-1] != '(' ) {
-		if(tempStack.length!=0){
-			resultExpr.push(tempStack.pop());
+	while (true){
+		if (tempStack.length != 0){
+			if(getLast(tempStack).value != '('){
+				resultExpr.push(tempStack.pop());
+			}
+			else {
+				tempStack.pop();
+				return;
+			}
 		}
-		else {
-			throw new Error ('incorrect expression: brackets error')
+		else{
+			throw new Error ('incorrect expression: brackets error');
 		}
 	}
-	tempStack.pop();
 }
 
 function processMathOperator (resultExpr,tempStack,curent) {
-	if(tempStack.length==0 || isFirstLowerPriority(tempStack[tempStack.length-1],curent)) {
+	if (tempStack.length == 0 || isFirstLowerPriority( getLast(tempStack).value, curent.value)) {   
 		tempStack.push(curent);
 	} else {
-		while(Boolean(tempStack[0]) && !isFirstLowerPriority(tempStack[tempStack.length-1],curent)){
+		while(tempStack.length != 0 && !isFirstLowerPriority(getLast(tempStack).value, curent.value)){
 			resultExpr.push(tempStack.pop());
 		}
 		tempStack.push(curent);
 	}
 }
 
-function processMinus (curent,tempStack,rpnExpr,expr) {
-	if (expr.length == 0){
-		throw new Error('incorrect expression: minus in the end')
-	}
-	if (isNumber(expr[0])) {
-
-		var firstDigit = expr.shift();			//Надо, наверное, переделать что-то чтоб этой строчки не было
-		var allNumber = takeAllNumber (expr, firstDigit);
+function convertStrExprToArrayExpr (str) {
+	var exprCharByChar = str.split('');
+	var resultExprArray = [];
+	var i=0;
+	while (i < exprCharByChar.length){
 		
-		if(rpnExpr.length == 0){
-			rpnExpr.push(-allNumber);
-		}
-		else {
-			rpnExpr.push(-allNumber);
-			processMathOperator(rpnExpr, tempStack, '+');
+		var curent = exprCharByChar[i];
+		var previous = exprCharByChar[i-1]
+		
+		if (isNumber(curent)){
+			curent = takeAllNumber(exprCharByChar,i);
+			resultExprArray.push({type: 'number', value: Number(curent)});
+			i += curent.length;
+			continue;
 		}
 
-	}
-	else {
-		processMathOperator(rpnExpr, tempStack, curent);
-	}
+		if ( isAllwableMathSymbol(curent)){
+			if(curent == '-' && (previous == '(' || previous == undefined)){
+				resultExprArray.push({type: 'unary operator', value: '-!'});
+			}
+			else{
+				resultExprArray.push({type: 'binary operator', value: curent});
+			}
+			i++;
+			continue;
+		}
+
+		if (curent =='(' || curent == ')') {
+			resultExprArray.push({type: 'bracket', value: curent});
+			i++;
+			continue;
+		};
+
+		if (curent == '_') {
+			curent = takeAllVariableName(exprCharByChar, i);
+			resultExprArray.push({type: 'variable', value: curent});
+			i += curent.length;
+			continue;	
+		}
+
+		throw new Error('incorrect expression: uncuported symbol '+ curent)
+	}	
+	return resultExprArray;
 }
 
 function toRPN(str) {
 	var rpnExpr =[];
 	var tempStack =[];
-	var expr = str.split('');
+	var expr = convertStrExprToArrayExpr(str);
 
-	while(Boolean(expr[0])){
+	while(expr.length != 0){
 		var curent = expr.shift();
-		if (isNumber(curent)) {
-			curent = takeAllNumber(expr, curent);
-			rpnExpr.push(curent);
+		
+		if (curent.type == 'number' || curent.type == 'variable' ) {
+			rpnExpr.push(curent);			
 			continue;
 		}
-		if (curent == '-') {
-			processMinus(curent,tempStack,rpnExpr,expr);
+
+		if (curent.type == 'binary operator' || curent.type == 'unary operator' ) {
+			processMathOperator(rpnExpr, tempStack, curent);							 
 			continue;
 		}
-		if ((curent == '*') || (curent == '/') || (curent == '+')) {
-			processMathOperator(rpnExpr, tempStack, curent);
-			continue;
-		}
-		if(curent == '(') {
-			tempStack.push(curent);
-			continue;
-		}
-		if(curent == ')') {
-			removeBrackets(rpnExpr,tempStack);			
+
+		if(curent.type == 'bracket'){
+			if(curent.value == '(') {
+				tempStack.push(curent);
+				continue;
+			}
+			if(curent.value == ')') {
+				removeBrackets(rpnExpr,tempStack);		    
+			}	
 		}
 	}
 
-	while(Boolean(tempStack[0])){
+	while(tempStack.length != 0){
 		rpnExpr.push(tempStack.pop());
 	}
 	return rpnExpr
 }
 
-function simpleMathAction(a, b, sign){
+function defineVariableValue (variable) {
+	return {type: 'number', value: 2}; //пока заполняю все переменные значением 2. потом надо как то их доставать
+}
+
+function simpleMathAction(a, b, operation){
 	var res;
-	switch (sign) {
+	if (a.type == 'variable'){
+		a = defineVariableValue(a);         		
+	}
+	if (b.type == 'variable'){
+		b = defineVariableValue(b);
+	}
+	switch (operation.value) {
 			case "+":
-				res= Number(a)+Number(b);
+				res= Number(a.value)+Number(b.value);
 				break;
 			case "-":
-				res= Number(a)-Number(b);
+				res= Number(a.value)-Number(b.value);
 				break;
 			case "*":
-				res= Number(a)*Number(b);
+				res= Number(a.value)*Number(b.value);
 				break;
 			case "/":
-				res= Number(a)/Number(b);
+				res= Number(a.value)/Number(b.value);
 				break;
 			default:
 				throw new Error('Unsupported operation');
 	}
-	return res;
+	return {type: 'number', value: res};
 }
 
 function calculator(str){
@@ -162,46 +233,59 @@ function calculateRpn(expr) {
 	var stack = [];
 
 	while(i < expr.length) {
-		if(isNumber(expr[i])) {
+		if(expr[i].type == 'number' || expr[i].type == 'variable') {
 			stack.push(expr[i]);
 			i++;
 			continue;
 		}
 
 		var operation = expr[i];
+		
+		if (operation.type == 'binary operator'){
+			if(stack.length < 2){
+				throw new Error('incorrect expression (1)');
+			}	
+			var second = stack.pop();  		
+			var first = stack.pop(); 
+			if(second.type == 'variable'){
+				second = defineVariableValue(second);
+			}
+			if(first.type == 'variable'){
+				first = defineVariableValue(first);
+			}
 
-		if(stack.length < 2) {
-			if (operation == '-' && stack.length == 1){
-				var number = stack.pop();
-				stack.push(-number);
-				i++;
-				continue;
-			}
-			else{
-				throw new Error('incorrect expression');
-			}
+			var result = simpleMathAction(first, second, operation);
+
+			stack.push(result);
 		}
 
-		var second = stack.pop(); 
-		var first = stack.pop(); 
-
-		var result = simpleMathAction(first, second, operation);
-
-		stack.push(result);
-
+		if (operation.type == 'unary operator'){
+			var numForUnaryOperation = stack.pop();
+			if (numForUnaryOperation.type == 'variable'){
+				numForUnaryOperation = defineVariableValue(numForUnaryOperation);
+			}
+			if (operation.value == '-!'){
+				stack.push({type: 'number', value: -numForUnaryOperation.value})
+			} else {
+				throw new Error('unsuported unary operation');
+			}
+		}
+		
 		i++;
 	}
 
 	if(stack.length != 1) {
-		throw new Error('incorrect expression');
+		throw new Error('incorrect expression (2)');
 	}
-	return stack.pop();
+	return stack.pop().value;
 }
 
 module.exports = {
 	calculator:calculator,
 	calculateRpn:calculateRpn,
 	sum: sum,
+	toRPN: toRPN,
 	arithmeticAverage: arithmeticAverage,
-	toRPN:toRPN
+	takeAllVariableName: takeAllVariableName,
+	convertStrExprToArrayExpr: convertStrExprToArrayExpr
 };
