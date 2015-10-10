@@ -3,47 +3,66 @@ var expect    = require("chai").expect;
 var rpn = require('./calc');
 
 describe('Math operations', function() {
+	
+	describe('sqrt', function() {
+		it('4 --> 2', function () {
+			var result = rpn.sqrt([4]);
+			expect(result).to.equal(2);
+		});
+		it('49 --> 7', function () {
+			var result = rpn.sqrt([49]);
+			expect(result).to.equal(7);
+		});
+	});	
+	
+	describe('factorial', function() {
+		it('4! --> 24', function () {
+			var result = rpn.factorial([4]);
+			expect(result).to.equal(24);
+		});
+		it('0! --> 1', function () {
+			var result = rpn.factorial([0]);
+			expect(result).to.equal(1);
+		});
+	});	
+
 	describe('sum', function() {
 		it('2,6 ---> 8', function () {
-			var result = rpn.sum(2,6);
-
+			var result = rpn.sum([2,6]);
 			assert(result == 8);
 		});
 		it('2,-2,6,7,9,4.7,345,2,1,22,-11,74,34,25 ---> 518.7', function () {
-			var result = rpn.sum(2,-2,6,7,9,4.7,345,2,1,5,6,74,34,25);
-
+			var result = rpn.sum([2,-2,6,7,9,4.7,345,2,1,5,6,74,34,25]);
 			assert(result == 518.7);
 		});
 		it('Infinity,4 ---> NaN', function () {
-			var result = rpn.arithmeticAverage(Infinity,4);
-
+			var result = rpn.sum([Infinity,4]);
 			expect(result).to.equal(Infinity);
 		});
-	});	
-	describe('arithmetic awerage', function() {
-		it('2,2 ---> 2', function () {
-			var result = rpn.arithmeticAverage(2,2);
+	});
 
+	describe('arithmetic average', function() {
+		it('2,2 ---> 2', function () {
+			var result = rpn.arithmeticAverage([2,2]);
 			assert(result == 2);
 		});
 		it('8,80,5 ---> 31', function () {
-			var result = rpn.arithmeticAverage(8,80,5);
-
+			var result = rpn.arithmeticAverage([8,80,5]);
 			assert(result == 31);
 		});
 		it('2,-2,6,7,9,4.7,345,2,1,5,6,74,34,25 ---> 518.7/14', function () {
-			var result = rpn.arithmeticAverage(2,-2,6,7,9,4.7,345,2,1,5,6,74,34,25);
-
+			var result = rpn.arithmeticAverage([2,-2,6,7,9,4.7,345,2,1,5,6,74,34,25]);
 			assert(result == 518.7/14);
 		});
 		it('8,80,5,Infinity ---> Infinity', function () {
-			var result = rpn.arithmeticAverage(8,80,5,Infinity);
-
+			var result = rpn.arithmeticAverage([8,80,5,Infinity]);
 			expect(result).to.equal(Infinity);
 		});
 	});	
 });
+
 describe('Reverse Polish Notation', function() {
+	
 	describe('from string', function() {
 		it('2+2 ---> 4', function () {
 			var result = rpn.calculator('2+2');
@@ -108,7 +127,7 @@ describe('Reverse Polish Notation', function() {
 	});
 
 
-	describe('unary minus', function() {
+	describe('Unary minus', function() {
 		it('-1 ---> -1', function () {
 			var result = rpn.calculator('-1');
 			expect(result).to.equal(-1);
@@ -130,22 +149,66 @@ describe('Reverse Polish Notation', function() {
 			expect(result).to.equal(11);
 		});
 	});
-
-
-	describe('variables', function() {
-		it('_t+1 ---> 3', function () {
-			var result = rpn.calculator('_t+1');
+	
+	describe('Variables', function() {
+		it('t+1 ---> 3', function () {
+			var result = rpn.calculator('t+1');
 			expect(result).to.equal(3);
 		});
-		it('_t+_h ---> 4', function () {
-			var result = rpn.calculator('_t+_h');
+		it('t+h ---> 4', function () {
+			var result = rpn.calculator('t+h');
 			expect(result).to.equal(4);
 		});
-		it('_var-(-(1-_var1)+_var2) ---> -1', function () {
-			var result = rpn.calculator('_var-(-(1-_var1)+_var2)');
+		it('var-(-(1-var1)+var2) ---> -1', function () {
+			var result = rpn.calculator('var-(-(1-var1)+var2)');
 			expect(result).to.equal(-1);
 		});
 	});
+	
+	describe('Embedded Methods', function() {
+		it('sum(2,3,4,1,1,1) ---> 12', function () {
+			var result = rpn.calculator('sum(2,3,4,1,1,1)');
+			expect(result).to.equal(12);
+		});
+		it('10-sum(2) ---> 8', function () {
+			var result = rpn.calculator('10-sum(2)');
+			expect(result).to.equal(8);
+		});
+		it('sum(2,13-2*5) ---> 5', function () {
+			var result = rpn.calculator('sum(2,13-2*5)');
+			expect(result).to.equal(5);
+		});
+		it('-sum(2,5,4) ---> -11', function () {
+			var result = rpn.calculator('-sum(2,5,4)');
+			expect(result).to.equal(-11);
+		});
+		it('-sum(2,-sum(5,6,7)*2+80,4) ---> -50', function () {
+			var result = rpn.calculator('-sum(2,-sum(5,6,7)*2+80,4)');
+			expect(result).to.equal(-50);
+		});
+		it('sum(5,sum(6,5),8,sum(4,sum(3,7),5)) ---> 43', function () {
+			var result = rpn.calculator('sum(5,sum(6,5),8,sum(4,sum(3,7),5))');
+			expect(result).to.equal(43);
+		});
+		it('aaverage(5,7,9)+2 ---> 9', function () {
+			var result = rpn.calculator('aaverage(5,7,9)+2');
+			expect(result).to.equal(9);
+		});
+		it('factorial(4) ---> 24', function () {
+			var result = rpn.calculator('factorial(4)');
+			expect(result).to.equal(24);
+		});
+		it('-gaverage(12,5) ---> -13', function () {
+			var result = rpn.calculator('-gaverage(12,5)');
+			expect(result).to.equal(-13);
+		});
+		it('aaverage(5,7,9)+factorial(4)+(gaverage(12,5)+5)/sum(1,sqrt(16),multipl(1,2*2)) ---> 33', function () {
+			var result = rpn.calculator('aaverage(5,7,9)+factorial(4)+(gaverage(12,5)+5)/sum(1,sqrt(16),multipl(1,2*2))');
+			expect(result).to.equal(33);
+		});
+	});
+	
+
 	describe('Errors', function() {
 		it('() ---> incorrect expression', function () {
 			expect(function() {rpn.calculator('()');}).to.throw('incorrect expression');
@@ -175,6 +238,7 @@ describe('Reverse Polish Notation', function() {
 			expect(function() {rpn.calculator('(test)-');}).to.throw('incorrect expression');
 		});
 	});
+	
 	describe('tests for develop', function() {
 		
 	})

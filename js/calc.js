@@ -1,5 +1,23 @@
+var utils = require('./utils');
 var allowableMathSymbols = '+-*/';
-var allowableCharForVariable = 'abcdefghijklmnopqrstuvwxyz0123456789';
+var allowableCharForVariable = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+var embeddedMethods = ['sum','multipl','aaverage','gaverage','factorial','sqrt'];
+
+function isEmbeddedMethod (str){
+	for (i=0; i < embeddedMethods.length; i++){
+		if (embeddedMethods[i] == str){
+			return true;
+		}
+	}
+	return false;
+}
+
+function isCharOneOf(a,allowableChars) {
+	if (allowableChars.indexOf(a) != -1){
+		return true;
+	}
+	return false;
+}
 
 function isAllwableMathSymbol(a) {
 	if (allowableMathSymbols.indexOf(a) != -1){
@@ -22,20 +40,56 @@ function isNumber(a) {
 	return !isNaN(a);	// вариант когда просто по typeof  для случая с цифрой в виде чара не срабатывает.
 }
 
-function sum() {
-	result = arguments[0]; 
-  	for (var i = 1; i < arguments.length; i++) {
-    	result +=arguments[i];
+function factorial (arg){
+	if(arg.length!=1){
+		throw new Error('factorial must have only one parameter');
+	}
+	var num = arg[0];
+	var res= 1;
+	for(i=1;i<=num;i++){
+		res*=i;
+	}
+	return res;
+}
+
+function sum (args) {
+	result = 0; 
+  	for (var i = 0; i < args.length; i++) {
+    	result += Number(args[i]);
   	}
   	return result;
 }
 
-function arithmeticAverage() {
-	result = arguments[0]; 
-  	for (var i = 1; i < arguments.length; i++) {
-    	result +=arguments[i];
+function sqrt (arg) {
+	if(arg.length!=1){
+		throw new Error('sqrt must have only one parameter');
+	}
+	return Math.sqrt(arg[0]);
+}
+
+function multiplication (args) {	
+	result = 1; 
+  	for (var i = 0; i < args.length; i++) {
+    	result *= Number(args[i]);
   	}
-  	result /= arguments.length;
+  	return result;
+}
+
+function arithmeticAverage(args) {
+	result = 0; 
+  	for (var i = 0; i < args.length; i++) {
+    	result +=args[i];
+  	}
+  	result /= args.length;
+  	return result;
+}
+
+function geometricAverage(args) {
+	result = 0; 
+  	for (var i = 0; i < args.length; i++) {
+    	result +=args[i]*args[i];
+  	}
+  	result = sqrt([result]);
   	return result;
 }
 
@@ -44,7 +98,14 @@ function getLast (array) {
 }
 
 function getPriority (symbol){
-	switch (symbol) {
+	switch (symbol) { //'sum','multipl','aaverage','gaverage','factorial','sqrt'
+		case 'sum':
+		case 'multipl':
+		case 'aaverage':
+		case 'gaverage':
+		case 'factorial':
+		case 'sqrt':
+			return 5;
 		case '-!':
 			return 4;
 		case '*':
@@ -64,20 +125,20 @@ var isFirstLowerPriority = function (first, second) {
 
 function takeAllNumber (expr, indexFrom){
 	var allNumber = expr[indexFrom];
-	indexFrom++;
-	while(isNumber(expr[indexFrom])){ 
-		allNumber = allNumber + expr[indexFrom];
-		indexFrom++;
+	var curentIndex = indexFrom + 1;
+	while(isNumber(expr[curentIndex])){ 
+		allNumber = allNumber + expr[curentIndex];
+		curentIndex++;
 	}
 	return allNumber;
 }
 
 function takeAllVariableName (expr, indexFrom){
 	var allName = expr[indexFrom];
-	var i = indexFrom +1;
-	while( isAllwableCharForVariable(expr[i]) !=0){ 
-		allName = allName + expr[i];
-		i++;
+	var curentIndex = indexFrom +1;
+	while( isAllwableCharForVariable(expr[curentIndex])){ 
+		allName = allName + expr[curentIndex];
+		curentIndex++;
 	}
 	return allName;
 }
@@ -90,6 +151,11 @@ function removeBrackets (resultExpr, tempStack) {
 			}
 			else {
 				tempStack.pop();
+				if (tempStack.length != 0){
+					if( isEmbeddedMethod( getLast(tempStack).value ) ){
+						resultExpr.push(tempStack.pop());
+					}	
+				}
 				return;
 			}
 		}
@@ -110,6 +176,32 @@ function processMathOperator (resultExpr,tempStack,curent) {
 	}
 }
 
+function countNumArgs(str, indexFrom){
+	var stack = [];
+	var numDeletedCommas = 0;
+	while(true){
+		if(str[indexFrom]=='(' || str[indexFrom]==','){
+			stack.push(str[indexFrom]);
+		}
+		if(str[indexFrom]==')'){
+			var numDeletedCommas = 0;
+			while(getLast(stack)!='('){
+				if(stack.length == 0){
+					throw new Error('incorrect expression');
+				}
+				numDeletedCommas++;
+				stack.pop()
+			}
+			if(stack.length==1){
+				return numDeletedCommas +1;
+			}
+			stack.pop()
+		}
+		indexFrom++;
+	}
+
+}
+
 function convertStrExprToArrayExpr (str) {
 	var exprCharByChar = str.split('');
 	var resultExprArray = [];
@@ -126,8 +218,8 @@ function convertStrExprToArrayExpr (str) {
 			continue;
 		}
 
-		if ( isAllwableMathSymbol(curent)){
-			if(curent == '-' && (previous == '(' || previous == undefined)){
+		if (isAllwableMathSymbol(curent)){
+			if(curent == '-' && (previous == '(' || previous == undefined || previous ==',')){
 				resultExprArray.push({type: 'unary operator', value: '-!'});
 			}
 			else{
@@ -143,11 +235,23 @@ function convertStrExprToArrayExpr (str) {
 			continue;
 		};
 
-		if (curent == '_') {
+		if (isCharOneOf(curent, allowableCharForVariable)) {
 			curent = takeAllVariableName(exprCharByChar, i);
-			resultExprArray.push({type: 'variable', value: curent});
+			if (isEmbeddedMethod(curent)){
+				var numArgs = countNumArgs(str,i);
+				resultExprArray.push({type: 'multi operator', value: curent, numArgs: numArgs});
+			}
+			else{
+				resultExprArray.push({type: 'variable', value: curent});	
+			}
 			i += curent.length;
 			continue;	
+		}
+
+		if(curent == ','){
+			resultExprArray.push({type: 'comma', value: curent});
+			i++;
+			continue;
 		}
 
 		throw new Error('incorrect expression: uncuported symbol '+ curent)
@@ -168,7 +272,7 @@ function toRPN(str) {
 			continue;
 		}
 
-		if (curent.type == 'binary operator' || curent.type == 'unary operator' ) {
+		if (curent.type == 'binary operator' || curent.type == 'unary operator' || curent.type == 'multi operator') {
 			processMathOperator(rpnExpr, tempStack, curent);							 
 			continue;
 		}
@@ -182,6 +286,15 @@ function toRPN(str) {
 				removeBrackets(rpnExpr,tempStack);		    
 			}	
 		}
+
+		if (curent.type == 'comma'){
+			while(getLast(tempStack).value != '('){
+				if(tempStack.length == 0){
+					throw new Error('incorrect expression: comma not in embedded method ');
+				}
+				rpnExpr.push(tempStack.pop());
+			}
+		}
 	}
 
 	while(tempStack.length != 0){
@@ -192,6 +305,33 @@ function toRPN(str) {
 
 function defineVariableValue (variable) {
 	return {type: 'number', value: 2}; //пока заполняю все переменные значением 2. потом надо как то их доставать
+}
+
+function applyEmbeddedFunction (args, func) {
+	var res;                                  //обработать если пришли переменные
+	switch (func.value) {  //'multipl', 'aaverage', 'gaverage', 'factorial', 'sqrt'
+			case "sum":
+				res = sum(args);
+				break;
+			case "multipl":
+				res = multiplication(args);
+				break;
+			case "aaverage":
+				res = arithmeticAverage(args);
+				break;
+			case "gaverage":
+				res = geometricAverage(args);
+				break;
+			case "factorial":
+				res = factorial(args);
+				break;
+			case "sqrt":
+				res = sqrt(args);
+				break;
+			default:
+				throw new Error('Unsupported operation (embeddedMethods)');
+	}
+	return {type: 'number', value: res};
 }
 
 function simpleMathAction(a, b, operation){
@@ -247,12 +387,6 @@ function calculateRpn(expr) {
 			}	
 			var second = stack.pop();  		
 			var first = stack.pop(); 
-			if(second.type == 'variable'){
-				second = defineVariableValue(second);
-			}
-			if(first.type == 'variable'){
-				first = defineVariableValue(first);
-			}
 
 			var result = simpleMathAction(first, second, operation);
 
@@ -270,6 +404,21 @@ function calculateRpn(expr) {
 				throw new Error('unsuported unary operation');
 			}
 		}
+
+		if (operation.type == 'multi operator'){
+			var numArgs = operation.numArgs;
+			if(stack.length < numArgs){
+				throw new Error('incorrect expression (3)');
+			}	
+			var args =[];
+			for (j=0; j < numArgs; j++){
+				args.push(stack.pop().value);
+			}
+			var result = applyEmbeddedFunction(args, operation);
+
+			stack.push(result);
+		}
+
 		
 		i++;
 	}
@@ -280,6 +429,9 @@ function calculateRpn(expr) {
 	return stack.pop().value;
 }
 
+
+
+
 module.exports = {
 	calculator:calculator,
 	calculateRpn:calculateRpn,
@@ -287,5 +439,10 @@ module.exports = {
 	toRPN: toRPN,
 	arithmeticAverage: arithmeticAverage,
 	takeAllVariableName: takeAllVariableName,
-	convertStrExprToArrayExpr: convertStrExprToArrayExpr
+	convertStrExprToArrayExpr: convertStrExprToArrayExpr,
+	sum: sum,
+	factorial:factorial,
+	sqrt:sqrt,
+	countNumArgs:countNumArgs,
+	geometricAverage:geometricAverage
 };
