@@ -1,16 +1,8 @@
 var utils = require('./utils');
-var allowableMathSymbols = '+-*/';
-var allowableCharForVariable = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-var embeddedMethods = ['sum','multipl','aaverage','gaverage','factorial','sqrt'];
+var embeddedMethods = require('./embeddedMethods');
 
-function isEmbeddedMethod (str){
-	for (i=0; i < embeddedMethods.length; i++){
-		if (embeddedMethods[i] == str){
-			return true;
-		}
-	}
-	return false;
-}
+var allowableMathSymbols = '+-*/';
+var allowableForVariable = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 function isCharOneOf(a,allowableChars) {
 	if (allowableChars.indexOf(a) != -1){
@@ -19,78 +11,8 @@ function isCharOneOf(a,allowableChars) {
 	return false;
 }
 
-function isAllwableMathSymbol(a) {
-	if (allowableMathSymbols.indexOf(a) != -1){
-		return true;
-	}
-	return false;
-}
-
-function isAllwableCharForVariable(a) {
-	if (allowableCharForVariable.indexOf(a) != -1){
-		return true;
-	}
-	return false;
-}
-
-function isNumber(a) {
-	if (typeof a == 'number') {
-		return true;	
-	} 					// Не уверена что так делать верно, но мне нужно как-то определить является ли символ цифрой. 
-	return !isNaN(a);	// вариант когда просто по typeof  для случая с цифрой в виде чара не срабатывает.
-}
-
-function factorial (arg){
-	if(arg.length!=1){
-		throw new Error('factorial must have only one parameter');
-	}
-	var num = arg[0];
-	var res= 1;
-	for(i=1;i<=num;i++){
-		res*=i;
-	}
-	return res;
-}
-
-function sum (args) {
-	result = 0; 
-  	for (var i = 0; i < args.length; i++) {
-    	result += Number(args[i]);
-  	}
-  	return result;
-}
-
-function sqrt (arg) {
-	if(arg.length!=1){
-		throw new Error('sqrt must have only one parameter');
-	}
-	return Math.sqrt(arg[0]);
-}
-
-function multiplication (args) {	
-	result = 1; 
-  	for (var i = 0; i < args.length; i++) {
-    	result *= Number(args[i]);
-  	}
-  	return result;
-}
-
-function arithmeticAverage(args) {
-	result = 0; 
-  	for (var i = 0; i < args.length; i++) {
-    	result +=args[i];
-  	}
-  	result /= args.length;
-  	return result;
-}
-
-function geometricAverage(args) {
-	result = 0; 
-  	for (var i = 0; i < args.length; i++) {
-    	result +=args[i]*args[i];
-  	}
-  	result = sqrt([result]);
-  	return result;
+function isCharNumber(char){
+	return ('0' <= char && char <= '9');
 }
 
 function getLast (array) {
@@ -98,11 +20,12 @@ function getLast (array) {
 }
 
 function getPriority (symbol){
-	switch (symbol) { //'sum','multipl','aaverage','gaverage','factorial','sqrt'
+	switch (symbol) { 
 		case 'sum':
-		case 'multipl':
+		case 'mult':
 		case 'aaverage':
 		case 'gaverage':
+		case 'qaverage':
 		case 'factorial':
 		case 'sqrt':
 			return 5;
@@ -123,21 +46,21 @@ var isFirstLowerPriority = function (first, second) {
 	return getPriority(first) < getPriority(second);
 }
 
-function takeAllNumber (expr, indexFrom){
-	var allNumber = expr[indexFrom];
+function takeAllNumber (str, indexFrom){
+	var allNumber = str[indexFrom];
 	var curentIndex = indexFrom + 1;
-	while(isNumber(expr[curentIndex])){ 
-		allNumber = allNumber + expr[curentIndex];
+	while(isCharNumber(str[curentIndex])){ 
+		allNumber = allNumber + str[curentIndex];
 		curentIndex++;
 	}
 	return allNumber;
 }
 
-function takeAllVariableName (expr, indexFrom){
-	var allName = expr[indexFrom];
+function takeAllVariableName (str, indexFrom){
+	var allName = str[indexFrom];
 	var curentIndex = indexFrom +1;
-	while( isAllwableCharForVariable(expr[curentIndex])){ 
-		allName = allName + expr[curentIndex];
+	while( isCharOneOf( str[curentIndex], allowableForVariable ) ) { 
+		allName = allName + str[curentIndex];
 		curentIndex++;
 	}
 	return allName;
@@ -152,7 +75,7 @@ function removeBrackets (resultExpr, tempStack) {
 			else {
 				tempStack.pop();
 				if (tempStack.length != 0){
-					if( isEmbeddedMethod( getLast(tempStack).value ) ){
+					if( embeddedMethods.isEmbeddedMethod( getLast(tempStack).value ) ){
 						resultExpr.push(tempStack.pop());
 					}	
 				}
@@ -211,14 +134,14 @@ function convertStrExprToArrayExpr (str) {
 		var curent = exprCharByChar[i];
 		var previous = exprCharByChar[i-1]
 		
-		if (isNumber(curent)){
+		if (isCharNumber(curent)){
 			curent = takeAllNumber(exprCharByChar,i);
 			resultExprArray.push({type: 'number', value: Number(curent)});
 			i += curent.length;
 			continue;
 		}
 
-		if (isAllwableMathSymbol(curent)){
+		if ( isCharOneOf( curent, allowableMathSymbols ) ){
 			if(curent == '-' && (previous == '(' || previous == undefined || previous ==',')){
 				resultExprArray.push({type: 'unary operator', value: '-!'});
 			}
@@ -235,9 +158,9 @@ function convertStrExprToArrayExpr (str) {
 			continue;
 		};
 
-		if (isCharOneOf(curent, allowableCharForVariable)) {
+		if (isCharOneOf(curent, allowableForVariable)) {
 			curent = takeAllVariableName(exprCharByChar, i);
-			if (isEmbeddedMethod(curent)){
+			if (embeddedMethods.isEmbeddedMethod(curent)){
 				var numArgs = countNumArgs(str,i);
 				resultExprArray.push({type: 'multi operator', value: curent, numArgs: numArgs});
 			}
@@ -308,26 +231,29 @@ function defineVariableValue (variable) {
 }
 
 function applyEmbeddedFunction (args, func) {
-	var res;                                  //обработать если пришли переменные
-	switch (func.value) {  //'multipl', 'aaverage', 'gaverage', 'factorial', 'sqrt'
+	var res;               
+	switch (func.value) { 
 			case "sum":
-				res = sum(args);
+				res = embeddedMethods.sum(args);
 				break;
-			case "multipl":
-				res = multiplication(args);
+			case "mult":
+				res = embeddedMethods.multiplication(args);
 				break;
 			case "aaverage":
-				res = arithmeticAverage(args);
+				res = embeddedMethods.arithmeticAverage(args);
 				break;
 			case "gaverage":
-				res = geometricAverage(args);
+				res = embeddedMethods.geometricAverage(args);
+				break;
+			case "qaverage":
+				res = embeddedMethods.quadraticAverage(args);
 				break;
 			case "factorial":
-				res = factorial(args);
+				res = embeddedMethods.factorial(args);
 				break;
 			case "sqrt":
-				res = sqrt(args);
-				break;
+				res = embeddedMethods.sqrt(args);
+				break;				
 			default:
 				throw new Error('Unsupported operation (embeddedMethods)');
 	}
@@ -429,20 +355,11 @@ function calculateRpn(expr) {
 	return stack.pop().value;
 }
 
-
-
-
 module.exports = {
 	calculator:calculator,
 	calculateRpn:calculateRpn,
-	sum: sum,
 	toRPN: toRPN,
-	arithmeticAverage: arithmeticAverage,
 	takeAllVariableName: takeAllVariableName,
 	convertStrExprToArrayExpr: convertStrExprToArrayExpr,
-	sum: sum,
-	factorial:factorial,
-	sqrt:sqrt,
-	countNumArgs:countNumArgs,
-	geometricAverage:geometricAverage
+	countNumArgs:countNumArgs
 };
