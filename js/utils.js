@@ -1,5 +1,6 @@
 var allowableMathSymbols = '+-*/';
 var allowableForVariable = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+var allowableForStartVariable = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 function getLast (array) {
 	return array[array.length-1]
@@ -14,6 +15,11 @@ function isCharOneOf(a,allowableChars) {
 		return true;
 	}
 	return false;
+}
+
+function isStrIsNumber(str) {
+    var regex = new RegExp(/^[-|+]?[0-9]+(\.[0-9]*)?$/);
+    return regex.test(str);
 }
 
 function isUnaryMinus (str, index) {
@@ -73,10 +79,12 @@ module.exports = {
 	getLast: getLast,
 	isCharNumber: isCharNumber,
 	isCharOneOf: isCharOneOf,
+	isStrIsNumber: isStrIsNumber,
 	isUnaryMinus: isUnaryMinus,
 	isFirstLowerPriority: isFirstLowerPriority,
 	takeAllNumber: takeAllNumber,
 	takeAllVariableName: takeAllVariableName,
 	allowableForVariable:allowableForVariable,
+	allowableForStartVariable: allowableForStartVariable,
 	allowableMathSymbols: allowableMathSymbols
 };

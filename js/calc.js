@@ -1,12 +1,6 @@
 var utils = require('./utils');
 var embeddedMethods = require('./embeddedMethods');
-
-function defineVariableValue(variable) {
-    return {
-        type: 'number',
-        value: 2
-    }; //пока заполняю все переменные значением 2. потом надо как то их доставать
-}
+var consoleReader = require('./consoleReader');
 
 function countNumArgs(str, indexFrom) {
     var stack = [];
@@ -33,22 +27,30 @@ function countNumArgs(str, indexFrom) {
     throw new Error('incorrect expression: incorrect use of embedded method');
 }
 
+function checkingForEMBrackets(resultExpr, tempStack) {
+    if (tempStack.length != 0) {
+        if (embeddedMethods.isEmbeddedMethod(utils.getLast(tempStack).value)) {
+            resultExpr.push(tempStack.pop());
+        }
+    }
+}
+
 function removeBrackets(resultExpr, tempStack) {
-    while (true) {
-        if (tempStack.length != 0) {
-            if (utils.getLast(tempStack).value != '(') {
-                resultExpr.push(tempStack.pop());
-            } else {
-                tempStack.pop();
-                if (tempStack.length != 0) {
-                    if (embeddedMethods.isEmbeddedMethod(utils.getLast(tempStack).value)) {
-                        resultExpr.push(tempStack.pop());
-                    }
-                }
-                return;
-            }
-        } else {
+    var isOpenBracketFind = false;
+
+    while (!isOpenBracketFind) {
+        
+        if (tempStack.length == 0) {
             throw new Error('incorrect expression: brackets error');
+        }
+
+        if (utils.getLast(tempStack).value != '(') {
+            resultExpr.push(tempStack.pop());
+        } 
+        else {
+            tempStack.pop();
+            checkingForEMBrackets(resultExpr, tempStack);
+            isOpenBracketFind = true;
         }
     }
 }
@@ -119,7 +121,6 @@ function convertStrExprToArrayExpr(str) {
     while (i < exprCharByChar.length) {
 
         var curent = exprCharByChar[i];
-
         if (utils.isCharNumber(curent)) {
             curent = utils.takeAllNumber(exprCharByChar, i);
             resultExprArray.push({
@@ -130,16 +131,39 @@ function convertStrExprToArrayExpr(str) {
             continue;
         }
 
-        if (utils.isCharOneOf(curent, utils.allowableMathSymbols)) {
+        var isCurentStartVariable = utils.isCharOneOf(curent, utils.allowableForStartVariable);
+        if (isCurentStartVariable) {
+            curent = utils.takeAllVariableName(exprCharByChar, i);
+            if (embeddedMethods.isEmbeddedMethod(curent)) {
+                var numArgs = countNumArgs(str, i);
+                resultExprArray.push({
+                    type: 'operator',
+                    value: curent,
+                    numArgs: numArgs
+                });
+            } else {
+                resultExprArray.push({
+                    type: 'variable',
+                    name: curent,
+                    value: undefined
+                });
+            }
+            i += curent.length;
+            continue;
+        }
+
+        var isCurentMathSymbol = utils.isCharOneOf(curent, utils.allowableMathSymbols);
+        if (isCurentMathSymbol) {
             if (utils.isUnaryMinus(exprCharByChar, i)) {
                 var numArgs = 1;
-                curent ='-!';
+                var value = '-!';
             } else {
-            	var numArgs = 2;
+                var numArgs = 2;
+                var value = curent;
             }
             resultExprArray.push({
                 type: 'operator',
-                value: curent,
+                value: value,
                 numArgs: numArgs
             });
             i++;
@@ -154,25 +178,6 @@ function convertStrExprToArrayExpr(str) {
             i++;
             continue;
         };
-
-        if (utils.isCharOneOf(curent, utils.allowableForVariable)) {
-            curent = utils.takeAllVariableName(exprCharByChar, i);
-            if (embeddedMethods.isEmbeddedMethod(curent)) {
-                var numArgs = countNumArgs(str, i);
-                resultExprArray.push({
-                    type: 'operator',
-                    value: curent,
-                    numArgs: numArgs
-                });
-            } else {
-                resultExprArray.push({
-                    type: 'variable',
-                    value: curent
-                });
-            }
-            i += curent.length;
-            continue;
-        }
 
         if (curent == ',') {
             resultExprArray.push({
@@ -237,45 +242,55 @@ function calculateRpn(arrExprRPN) {
     var stack = [];
 
     while (i < arrExprRPN.length) {
-        
         if (arrExprRPN[i].type == 'number' || arrExprRPN[i].type == 'variable') {
             stack.push(arrExprRPN[i]);
             i++;
             continue;
         }
-
         var operation = arrExprRPN[i];
-
         if (operation.type == 'operator') {
-
-            if (stack.length < operation.numArgs) {
-                throw new Error('incorrect expression (1)');
-            }
-
-            var args = [];
-            while (args.length < operation.numArgs) {
-                var arg = stack.pop();
-                if (arg.type == 'variable') {
-                    arg = defineVariableValue(arg);
-                }
-                args.push(arg.value);
-            }
-
-            var result = simpleMathAction(args, operation);
-            stack.push(result);
-
+            makeOperation(operation, stack);
             i++;
             continue;
         }
-
         throw new Error('incorrect RPN expr');
     }
-
     if (stack.length != 1) {
         throw new Error('incorrect expression (2)');
     }
-
     return stack.pop().value;
+}
+
+function makeOperation(operation, stack) {
+    if (stack.length < operation.numArgs) {
+        throw new Error('incorrect expression (1)');
+    }
+
+    var args = takeArgs(stack, operation.numArgs);
+    var result = simpleMathAction(args, operation);
+    stack.push(result);
+}
+
+function takeArgs(stack, numArgs) {
+    var args = [];
+
+    while (args.length < numArgs) {
+        var arg = stack.pop();
+        if (arg.type == 'variable') {
+            defineVariableValue(arg);
+        }
+        args.push(arg.value);
+    }
+    return args;
+}
+
+function defineVariableValue(variable) {
+    /*consoleReader.takeVariableValue(variable.name, function(value) {
+            variable.value = value;
+            console.log('variable ' + variable.name + ' now is ' + variable.value);
+        });
+*/
+    variable.value = 2; //пока заполняю все переменные значением 2. потом надо как то их доставать
 }
 
 function calculator(str) {

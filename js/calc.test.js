@@ -152,8 +152,8 @@ describe('Calculation using Reverse Polish Notation', function() {
 		it('3+87- ---> incorrect expression', function () {
 			expect(function() {rpn.calculator('3+87-');}).to.throw('incorrect expression');
 		});
-		it('3%87- ---> incorrect expression', function () {
-			expect(function() {rpn.calculator('3%87');}).to.throw('incorrect expression');
+		it('3^87- ---> incorrect expression', function () {
+			expect(function() {rpn.calculator('3^87-');}).to.throw('incorrect expression');
 		});
 		it('(test)- ---> incorrect expression', function () {
 			expect(function() {rpn.calculator('(test)-');}).to.throw('incorrect expression');
