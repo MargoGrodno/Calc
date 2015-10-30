@@ -18,6 +18,7 @@ function takeVariableValue(variableName, continueWith) {
     rl.on('line', function(incomingStr) {
         if (utils.isStrIsNumber(incomingStr)) {
             rl.close();
+            console.log('now '+ variableName + ' = ' + incomingStr);
             continueWith(Number(incomingStr));
         } else {
             console.log(incomingStr + ' is not a number');
@@ -27,18 +28,8 @@ function takeVariableValue(variableName, continueWith) {
 
 
 module.exports = {
-	takeVariableValue:takeVariableValue
+	takeVariableValue:takeVariableValue,
+    createRL: createRL
 };
 
 
-
-/*
-
-var variable = {type: 'variable', name: 'tesVar1', value: undefined};
-
-takeVariableValue(variable.name, function(value) {
-        variable.value = value;
-        console.log('variable ' + variable.name + ' now is ' + variable.value);
-    });
-
-*/

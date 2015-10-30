@@ -284,31 +284,23 @@ function takeArgs(stack, numArgs) {
 }
 
 function defineVariableValue(variable) {
-    /*consoleReader.takeVariableValue(variable.name, function(value) {
-            variable.value = value;
-            console.log('variable ' + variable.name + ' now is ' + variable.value);
-        });
-*/
     variable.value = 2; //пока заполняю все переменные значением 2. потом надо как то их доставать
 }
 
 function calculator(str) {
     var expr = toRPN(str);
-
-    return calculateRpn(expr);
+    if (arguments.length == 1){
+        return calculateRpn(expr);
+    }
+    if (arguments.length == 3){
+        calculateRpnA(expr, arguments[1], arguments[2]);
+    }
+       
 }
 
-function calculatorA (str, succeed, failure) {
-    var expr = toRPN(str);
-    calculateRpnA(expr,succeed,failure);   
-}
-
-
-function calculateRpnA(arrExprRPN, succeed, failure) {
-    
+function calculateRpnA(arrExprRPN, succeed, failure) {    
     var i = 0;
     var stack = [];
-
 
     function continueWith () {
         if(i < arrExprRPN.length){
@@ -316,7 +308,7 @@ function calculateRpnA(arrExprRPN, succeed, failure) {
         } 
         else {
             if (stack.length != 1) {
-                failure('incorrect expression (2)');
+                failure(new Error('incorrect expression (2)A'));
             }
             else{
                 succeed(stack.pop().value);
@@ -336,7 +328,7 @@ function calculateRpnA(arrExprRPN, succeed, failure) {
             makeOperationA(operator, stack, continueWith, failure);
         }
         else {
-            failure('incorrect RPN expr');
+            failure(new Error('incorrect RPN expr'));
         }
     }
 
@@ -344,10 +336,6 @@ function calculateRpnA(arrExprRPN, succeed, failure) {
 }
 
 function makeOperationA(operation, stack, succeed, failure) {
-        
-    if (stack.length < operation.numArgs) {
-        failure('incorrect expression');
-    }
 
     function continueWith (arr) {
         var args = arr;
@@ -356,7 +344,12 @@ function makeOperationA(operation, stack, succeed, failure) {
         succeed();
     };
 
-    takeArgsA(stack, operation.numArgs, continueWith, failure);
+    if (stack.length < operation.numArgs) {
+        failure(new Error('incorrect expression'));
+    }
+    else{
+        takeArgsA(stack, operation.numArgs, continueWith, failure);    
+    }
 }
 
 function takeArgsA(stack, numArgs, succeed, failure) {
@@ -379,27 +372,31 @@ function takeArgA(stack, succeed, failure) {
     var arg = stack.pop();
     
     if (arg.type == 'variable') {
+        
         function defineVariableValueA() {
             arg.value = 2;
             succeed(arg);    
-    
         };
 
         setTimeout(defineVariableValueA, 100);
 
+        /*
+        consoleReader.takeVariableValue(arg.name, function  (val) {
+            arg.value = val;
+            succeed(arg);
+        })
+        */
     } 
     if (arg.type == 'number') {
         succeed(arg);
     } 
     if (arg.type!='number'&& arg.type!='variable'){
-        failure('not suported type');
+        failure(new Error('not suported type'));
     }
 }
 
 
-
 module.exports = {
-    calculatorA: calculatorA,
     calculator: calculator,
     takeArgsA: takeArgsA,
     makeOperationA: makeOperationA
