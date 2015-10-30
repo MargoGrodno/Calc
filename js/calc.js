@@ -39,15 +39,14 @@ function removeBrackets(resultExpr, tempStack) {
     var isOpenBracketFind = false;
 
     while (!isOpenBracketFind) {
-        
+
         if (tempStack.length == 0) {
             throw new Error('incorrect expression: brackets error');
         }
 
         if (utils.getLast(tempStack).value != '(') {
             resultExpr.push(tempStack.pop());
-        } 
-        else {
+        } else {
             tempStack.pop();
             checkingForEMBrackets(resultExpr, tempStack);
             isOpenBracketFind = true;
@@ -299,6 +298,109 @@ function calculator(str) {
     return calculateRpn(expr);
 }
 
+function calculatorA (str, succeed, failure) {
+    var expr = toRPN(str);
+    calculateRpnA(expr,succeed,failure);   
+}
+
+
+function calculateRpnA(arrExprRPN, succeed, failure) {
+    
+    var i = 0;
+    var stack = [];
+
+
+    function continueWith () {
+        if(i < arrExprRPN.length){
+            findOperation();
+        } 
+        else {
+            if (stack.length != 1) {
+                failure('incorrect expression (2)');
+            }
+            else{
+                succeed(stack.pop().value);
+            }        
+        }
+    }
+
+    function findOperation () {    
+        while (i < arrExprRPN.length && (arrExprRPN[i].type == 'number' || arrExprRPN[i].type == 'variable')) {
+            stack.push(arrExprRPN[i]);
+            i++;
+        }
+
+        var operator = arrExprRPN[i];
+        if(operator.type == 'operator'){
+            i++;
+            makeOperationA(operator, stack, continueWith, failure);
+        }
+        else {
+            failure('incorrect RPN expr');
+        }
+    }
+
+    findOperation();
+}
+
+function makeOperationA(operation, stack, succeed, failure) {
+        
+    if (stack.length < operation.numArgs) {
+        failure('incorrect expression');
+    }
+
+    function continueWith (arr) {
+        var args = arr;
+        var result = simpleMathAction(args, operation);
+        stack.push(result);
+        succeed();
+    };
+
+    takeArgsA(stack, operation.numArgs, continueWith, failure);
+}
+
+function takeArgsA(stack, numArgs, succeed, failure) {
+
+    var args = [];
+
+    function continueWith(arg) {
+        args.push(arg.value);
+        if (args.length < numArgs) {
+            takeArgA(stack, continueWith, failure);
+        } else {
+            succeed(args);
+        }
+    }
+
+    takeArgA(stack, continueWith, failure);
+}
+
+function takeArgA(stack, succeed, failure) {
+    var arg = stack.pop();
+    
+    if (arg.type == 'variable') {
+        function defineVariableValueA() {
+            arg.value = 2;
+            succeed(arg);    
+    
+        };
+
+        setTimeout(defineVariableValueA, 100);
+
+    } 
+    if (arg.type == 'number') {
+        succeed(arg);
+    } 
+    if (arg.type!='number'&& arg.type!='variable'){
+        failure('not suported type');
+    }
+}
+
+
+
 module.exports = {
-    calculator: calculator
+    calculatorA: calculatorA,
+    calculator: calculator,
+    takeArgsA: takeArgsA,
+    makeOperationA: makeOperationA
 };

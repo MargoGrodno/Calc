@@ -1,11 +1,7 @@
 var rpn = require('./calc');
-var readline = require('readline');
+var consoleReader = require('./consoleReader');
 
-var rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false
-});
+var rl = consoleReader.createRL();
 
 console.log('Enter exprassion ');
 
