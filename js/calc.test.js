@@ -83,10 +83,12 @@ describe('Calculation using Reverse Polish Notation', function() {
                 var result = rpn.calculator('t+1');
                 expect(result).to.equal(3);
             });
+            
             it('t+h ---> 4', function() {
                 var result = rpn.calculator('t+h');
                 expect(result).to.equal(4);
             });
+            
             it('var-(-(1-var1)+var2) ---> -1', function() {
                 var result = rpn.calculator('var-(-(1-var1)+var2)');
                 expect(result).to.equal(-1);
@@ -133,10 +135,10 @@ describe('Calculation using Reverse Polish Notation', function() {
 
 
         describe('Errors', function() {
-            it('() ---> incorrect expression', function() {
+            it('() ---> empty expression', function() {
                 expect(function() {
                     rpn.calculator('()');
-                }).to.throw('incorrect expression');
+                }).to.throw('empty expression');
             });
             it('(2-3)) ---> incorrect expression: brackets error', function() {
                 expect(function() {

@@ -1,7 +1,7 @@
 var rpn = require('./calc');
 var consoleReader = require('./consoleReader');
-
 var rl = consoleReader.createRL();
+
 
 console.log('Enter expression ');
 
@@ -14,5 +14,5 @@ rl.on('line', function(incomingStr) {
 	}, function(err) {
 	    console.log('fail');
 	    throw err;
-	})
+	}, consoleReader.defineVariableValue);
 });

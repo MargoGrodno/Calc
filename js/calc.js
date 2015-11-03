@@ -1,6 +1,5 @@
 var utils = require('./utils');
 var embeddedMethods = require('./embeddedMethods');
-var consoleReader = require('./consoleReader');
 
 function countNumArgs(str, indexFrom) {
     var stack = [];
@@ -120,7 +119,7 @@ function convertStrExprToArrayExpr(str) {
     while (i < exprCharByChar.length) {
 
         var curent = exprCharByChar[i];
-        if (utils.isCharNumber(curent)) {
+        if (utils.isStrIsNumber(curent)) {
             curent = utils.takeAllNumber(exprCharByChar, i);
             resultExprArray.push({
                 type: 'number',
@@ -130,7 +129,7 @@ function convertStrExprToArrayExpr(str) {
             continue;
         }
 
-        var isCurentStartVariable = utils.isCharOneOf(curent, utils.allowableForStartVariable);
+        var isCurentStartVariable = utils.isCharAllowableForStartVar(curent);
         if (isCurentStartVariable) {
             curent = utils.takeAllVariableName(exprCharByChar, i);
             if (embeddedMethods.isEmbeddedMethod(curent)) {
@@ -151,7 +150,7 @@ function convertStrExprToArrayExpr(str) {
             continue;
         }
 
-        var isCurentMathSymbol = utils.isCharOneOf(curent, utils.allowableMathSymbols);
+        var isCurentMathSymbol = utils.isCharAllowableMathSymbol(curent);
         if (isCurentMathSymbol) {
             if (utils.isUnaryMinus(exprCharByChar, i)) {
                 var numArgs = 1;
@@ -233,101 +232,68 @@ function toRPN(str) {
     while (tempStack.length != 0) {
         rpnExpr.push(tempStack.pop());
     }
+    if(rpnExpr.length ==0 ){
+        throw new Error('empty expression');
+    }
     return rpnExpr
 }
 
-function calculateRpn(arrExprRPN) {
+function calculator(str, succeed, failure, defineVariableValue) {
+    var expr = toRPN(str);
+    if (succeed == undefined) {
+        var result;
+        calculateRpnA(expr, function(res){
+            result = res;
+        }, function (ex) {
+            throw ex;
+        }, function (variable, succeed, failure) {
+            variable.value = 2;
+            succeed(variable);
+        });
+        return result;
+    }
+    else {
+        calculateRpnA(expr, succeed, failure, defineVariableValue);
+    }
+}
+
+
+function calculateRpnA(arrExprRPN, succeed, failure, defineVariableValue) {
     var i = 0;
     var stack = [];
 
-    while (i < arrExprRPN.length) {
+    function continueWith() {
+        if (i < arrExprRPN.length) {
+            findOperation();
+        } else {
+            if (stack.length != 1) {
+                failure(new Error('incorrect expression (2)A'));
+            } else {
+                succeed(stack.pop().value);
+            }
+        }
+    }
+
+    function putAllOperandsToStack() {
         if (arrExprRPN[i].type == 'number' || arrExprRPN[i].type == 'variable') {
             stack.push(arrExprRPN[i]);
             i++;
-            continue;
-        }
-        var operation = arrExprRPN[i];
-        if (operation.type == 'operator') {
-            makeOperation(operation, stack);
-            i++;
-            continue;
-        }
-        throw new Error('incorrect RPN expr');
-    }
-    if (stack.length != 1) {
-        throw new Error('incorrect expression (2)');
-    }
-    return stack.pop().value;
-}
-
-function makeOperation(operation, stack) {
-    if (stack.length < operation.numArgs) {
-        throw new Error('incorrect expression (1)');
-    }
-
-    var args = takeArgs(stack, operation.numArgs);
-    var result = simpleMathAction(args, operation);
-    stack.push(result);
-}
-
-function takeArgs(stack, numArgs) {
-    var args = [];
-
-    while (args.length < numArgs) {
-        var arg = stack.pop();
-        if (arg.type == 'variable') {
-            defineVariableValue(arg);
-        }
-        args.push(arg.value);
-    }
-    return args;
-}
-
-function defineVariableValue(variable) {
-    variable.value = 2; //пока заполняю все переменные значением 2. потом надо как то их доставать
-}
-
-function calculator(str) {
-    var expr = toRPN(str);
-    if (arguments.length == 1){
-        return calculateRpn(expr);
-    }
-    if (arguments.length == 3){
-        calculateRpnA(expr, arguments[1], arguments[2]);
-    }
-       
-}
-
-function calculateRpnA(arrExprRPN, succeed, failure) {    
-    var i = 0;
-    var stack = [];
-
-    function continueWith () {
-        if(i < arrExprRPN.length){
-            findOperation();
-        } 
-        else {
-            if (stack.length != 1) {
-                failure(new Error('incorrect expression (2)A'));
+            if (i < arrExprRPN.length) {
+                putAllOperandsToStack();
             }
-            else{
-                succeed(stack.pop().value);
-            }        
         }
     }
 
-    function findOperation () {    
-        while (i < arrExprRPN.length && (arrExprRPN[i].type == 'number' || arrExprRPN[i].type == 'variable')) {
-            stack.push(arrExprRPN[i]);
-            i++;
+    function findOperation() {
+        if (i < arrExprRPN.length) {
+            putAllOperandsToStack();
         }
 
         var operator = arrExprRPN[i];
-        if(operator.type == 'operator'){
+        if (operator.type == 'operator') {
             i++;
-            makeOperationA(operator, stack, continueWith, failure);
-        }
-        else {
+            makeOperationA(operator, stack, continueWith, failure, defineVariableValue);
+        } else {
             failure(new Error('incorrect RPN expr'));
         }
     }
@@ -335,9 +301,9 @@ function calculateRpnA(arrExprRPN, succeed, failure) {
     findOperation();
 }
 
-function makeOperationA(operation, stack, succeed, failure) {
+function makeOperationA(operation, stack, succeed, failure, defineVariableValue) {
 
-    function continueWith (arr) {
+    function continueWith(arr) {
         var args = arr;
         var result = simpleMathAction(args, operation);
         stack.push(result);
@@ -346,51 +312,39 @@ function makeOperationA(operation, stack, succeed, failure) {
 
     if (stack.length < operation.numArgs) {
         failure(new Error('incorrect expression'));
-    }
-    else{
-        takeArgsA(stack, operation.numArgs, continueWith, failure);    
+    } else {
+        takeArgsA(stack, operation.numArgs, continueWith, failure, defineVariableValue);
     }
 }
 
-function takeArgsA(stack, numArgs, succeed, failure) {
+function takeArgsA(stack, numArgs, succeed, failure, defineVariableValue) {
 
     var args = [];
 
     function continueWith(arg) {
         args.push(arg.value);
         if (args.length < numArgs) {
-            takeArgA(stack, continueWith, failure);
+            takeArgA(stack, continueWith, failure, defineVariableValue);
         } else {
             succeed(args);
         }
     }
 
-    takeArgA(stack, continueWith, failure);
+    takeArgA(stack, continueWith, failure, defineVariableValue);
 }
 
-function takeArgA(stack, succeed, failure) {
+function takeArgA(stack, succeed, failure, defineVariableValue) {
     var arg = stack.pop();
-    
+
     if (arg.type == 'variable') {
-        
-        function defineVariableValueA() {
-            arg.value = 2;
-            succeed(arg);    
-        };
-
-        setTimeout(defineVariableValueA, 100);
-
-        /*
-        consoleReader.takeVariableValue(arg.name, function  (val) {
-            arg.value = val;
-            succeed(arg);
-        })
-        */
-    } 
+        defineVariableValue(arg, function (variable) {
+            succeed(variable);
+        }, failure);
+    }
     if (arg.type == 'number') {
         succeed(arg);
-    } 
-    if (arg.type!='number'&& arg.type!='variable'){
+    }
+    if (arg.type != 'number' && arg.type != 'variable') {
         failure(new Error('not suported type'));
     }
 }

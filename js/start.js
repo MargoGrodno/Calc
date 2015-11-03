@@ -1,11 +1,21 @@
 var rpn = require('./calc');
+var consoleReader = require('./consoleReader');
 
-//rpn.calculator('()');
+function defineVariableValue (variable, succeed, failure) {
+    variable.value = 2;
+    succeed(variable);
+}
 
-rpn.calculator('sum(2,13-var*5)', function(res) {
+
+rpn.calculator('t+h', function(res) {
     console.log(res);
 }, function(err) {
     console.log('fail');
     throw err;
-})
+}, defineVariableValue);
 
+
+/*
+var result = rpn.calculator('()');
+console.log(result);
+*/

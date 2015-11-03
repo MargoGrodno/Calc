@@ -26,10 +26,17 @@ function takeVariableValue(variableName, continueWith) {
     });
 };
 
+function defineVariableValue(variable, continueWith) {
+    takeVariableValue(variable.name, function(value) {
+        variable.value = value;
+        continueWith(variable);
+    });
+};
 
 module.exports = {
 	takeVariableValue:takeVariableValue,
-    createRL: createRL
+    createRL: createRL,
+    defineVariableValue: defineVariableValue
 };
 
 
