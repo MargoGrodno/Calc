@@ -3,8 +3,12 @@ var expect = require("chai").expect;
 var rpn = require('./calc');
 
 function defineVariableValue (variable, succeed, failure) {
-    variable.value = 2;
-    succeed(variable);
+    f();
+    //setTimeout(f, 10);
+    function f(){
+        variable.value = 2;
+        succeed(variable);
+    }
 }
 
 function failure (er) {

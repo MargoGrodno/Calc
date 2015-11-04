@@ -185,6 +185,16 @@ describe('Calculation using Reverse Polish Notation', function() {
                     rpn.calculator('sum(2,,13-var*5)');
                 }).to.throw('incorrect expression');
             });
+            it('2+2,6 ---> incorrect expression: comma not in embedded method', function() {
+                expect(function() {
+                    rpn.calculator('2+2,6');
+                }).to.throw('incorrect expression: comma not in embedded method');
+            });
+            it('2,+26 ---> incorrect expression: comma not in embedded method', function() {
+                expect(function() {
+                    rpn.calculator('2,+26');
+                }).to.throw('incorrect expression: comma not in embedded method');
+            });
             it('sqrt+5 ---> incorrect use of embedded method', function() {
                 expect(function() {
                     rpn.calculator('sqrt+5');

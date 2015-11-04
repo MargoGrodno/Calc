@@ -58,7 +58,7 @@ function isFirstLowerPriority(first, second) {
 function takeAllNumber(str, indexFrom) {
     var allNumber = str[indexFrom];
     var curentIndex = indexFrom + 1;
-    while (isCharNumber(str[curentIndex])) {
+    while (isStrIsNumber(str[curentIndex])) {
         allNumber = allNumber + str[curentIndex];
         curentIndex++;
     }

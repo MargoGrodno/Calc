@@ -38,7 +38,6 @@ function removeBrackets(resultExpr, tempStack) {
     var isOpenBracketFind = false;
 
     while (!isOpenBracketFind) {
-
         if (tempStack.length == 0) {
             throw new Error('incorrect expression: brackets error');
         }
@@ -220,11 +219,14 @@ function toRPN(str) {
         }
 
         if (curent.type == 'comma') {
-            while (utils.getLast(tempStack).value != '(') {
+            if (tempStack.length == 0) {
+                throw new Error('incorrect expression: comma not in embedded method ');
+            }
+            while (utils.getLast(tempStack).value != '(') {               
+                rpnExpr.push(tempStack.pop());
                 if (tempStack.length == 0) {
                     throw new Error('incorrect expression: comma not in embedded method ');
                 }
-                rpnExpr.push(tempStack.pop());
             }
         }
     }
@@ -239,13 +241,12 @@ function toRPN(str) {
 }
 
 function calculator(str, succeed, failure, defineVariableValue) {
-    var expr = toRPN(str);
     if (succeed == undefined) {
         var result;
-        calculateRpnA(expr, function(res){
+        calculateRpnA(str, function(res){
             result = res;
-        }, function (ex) {
-            throw ex;
+        }, function (e) {
+            throw e;
         }, function (variable, succeed, failure) {
             variable.value = 2;
             succeed(variable);
@@ -253,12 +254,16 @@ function calculator(str, succeed, failure, defineVariableValue) {
         return result;
     }
     else {
-        calculateRpnA(expr, succeed, failure, defineVariableValue);
+        calculateRpnA(str, succeed, failure, defineVariableValue);
     }
 }
 
-
-function calculateRpnA(arrExprRPN, succeed, failure, defineVariableValue) {
+function calculateRpnA(str, succeed, failure, defineVariableValue) {
+    try{
+        var arrExprRPN = toRPN(str);   
+    } catch(e){
+        failure(e);
+    }
     var i = 0;
     var stack = [];
 
@@ -267,7 +272,7 @@ function calculateRpnA(arrExprRPN, succeed, failure, defineVariableValue) {
             findOperation();
         } else {
             if (stack.length != 1) {
-                failure(new Error('incorrect expression (2)A'));
+                failure(new Error('incorrect expression'));
             } else {
                 succeed(stack.pop().value);
             }
@@ -290,12 +295,11 @@ function calculateRpnA(arrExprRPN, succeed, failure, defineVariableValue) {
         }
 
         var operator = arrExprRPN[i];
-        if (operator.type == 'operator') {
-            i++;
-            makeOperationA(operator, stack, continueWith, failure, defineVariableValue);
-        } else {
+        if (operator == undefined || operator.type != 'operator'){
             failure(new Error('incorrect RPN expr'));
         }
+        i++;
+        makeOperationA(operator, stack, continueWith, failure, defineVariableValue);
     }
 
     findOperation();
@@ -318,7 +322,6 @@ function makeOperationA(operation, stack, succeed, failure, defineVariableValue)
 }
 
 function takeArgsA(stack, numArgs, succeed, failure, defineVariableValue) {
-
     var args = [];
 
     function continueWith(arg) {
@@ -348,7 +351,6 @@ function takeArgA(stack, succeed, failure, defineVariableValue) {
         failure(new Error('not suported type'));
     }
 }
-
 
 module.exports = {
     calculator: calculator,
